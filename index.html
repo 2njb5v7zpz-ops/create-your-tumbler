@@ -1,2 +1,304 @@
-<!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>iPhone写真表示テスト</title><style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;margin:0;padding:20px;background:#f5f5f5}main{max-width:600px;margin:auto;background:white;padding:20px;border-radius:16px}label{display:block;padding:16px;background:#222;color:white;text-align:center;border-radius:12px;font-weight:700}input{display:none}#status{margin:14px 0;color:#555}img{display:none;width:100%;height:auto;border-radius:10px}</style></head><body><main><h2>iPhone写真表示テスト</h2><p>写真を1枚選んでください。</p><label>写真アプリから写真を選ぶ<input id="pick" type="file" accept="image/*"></label><div id="status">まだ写真は選択されていません。</div><img id="preview" alt="選択した写真"></main><script>const pick=document.getElementById('pick'),preview=document.getElementById('preview'),status=document.getElementById('status');pick.addEventListener('change',function(){const file=this.files&&this.files[0];if(!file)return;status.textContent='写真を読み込んでいます…';const reader=new FileReader();reader.onload=function(e){preview.src=e.target.result;preview.onload=function(){preview.style.display='block';status.textContent='✓ 写真を表示できました。'};preview.onerror=function(){status.textContent='✕ 写真は選択できましたが、表示できませんでした。'};};reader.onerror=function(){status.textContent='✕ ファイルを読み込めませんでした。'};reader.readAsDataURL(file);});</script></body></html>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>クリタンメーカー STEP 1</title>
+
+<style>
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f5f5f5;
+    color: #222;
+}
+
+.container {
+    max-width: 600px;
+    margin: auto;
+    padding: 20px;
+}
+
+h1 {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.description {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.button {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    background: #222;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+input {
+    display: none;
+}
+
+.preview {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    margin-top: 20px;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    touch-action: none;
+}
+
+.preview img {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    max-width: none;
+    transform-origin: center center;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.message {
+    text-align: center;
+    color: #777;
+    padding: 30px 0;
+}
+
+.controls {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.controls button {
+    padding: 10px 18px;
+    margin: 4px;
+    border: 0;
+    border-radius: 10px;
+    background: #ddd;
+    font-size: 15px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>クリタンメーカー</h1>
+
+<div class="description">
+STEP 1：写真の選択・プレビュー・位置調整
+</div>
+
+<label class="button">
+📷 写真アプリから選ぶ
+<input
+    id="photoInput"
+    type="file"
+    accept="image/*">
+</label>
+
+<div id="message" class="message">
+まだ写真が選択されていません。
+</div>
+
+<div id="preview" class="preview" style="display:none;">
+    <img id="photo">
+</div>
+
+<div id="controls" class="controls" style="display:none;">
+
+    <button id="zoomOut">− 縮小</button>
+
+    <button id="reset">リセット</button>
+
+    <button id="zoomIn">＋ 拡大</button>
+
+</div>
+
+</div>
+
+<script>
+
+const input = document.getElementById("photoInput");
+const preview = document.getElementById("preview");
+const photo = document.getElementById("photo");
+const message = document.getElementById("message");
+const controls = document.getElementById("controls");
+
+let scale = 1;
+let x = 0;
+let y = 0;
+
+let startX = 0;
+let startY = 0;
+
+let dragging = false;
+
+let startDistance = 0;
+let startScale = 1;
+
+function updatePhoto() {
+
+    photo.style.transform =
+        `translate(-50%, -50%) translate(${x}px, ${y}px) scale(${scale})`;
+
+}
+
+input.addEventListener("change", function() {
+
+    const file = input.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    const url = URL.createObjectURL(file);
+
+    photo.onload = function() {
+
+        scale = 1;
+        x = 0;
+        y = 0;
+
+        preview.style.display = "block";
+        controls.style.display = "block";
+
+        message.style.display = "none";
+
+        updatePhoto();
+
+    };
+
+    photo.src = url;
+
+});
+
+
+// 1本指：移動
+
+preview.addEventListener("touchstart", function(e) {
+
+    if (e.touches.length === 1) {
+
+        dragging = true;
+
+        startX = e.touches[0].clientX - x;
+        startY = e.touches[0].clientY - y;
+
+    }
+
+    if (e.touches.length === 2) {
+
+        dragging = false;
+
+        startDistance = getDistance(e.touches[0], e.touches[1]);
+
+        startScale = scale;
+
+    }
+
+}, { passive:false });
+
+
+preview.addEventListener("touchmove", function(e) {
+
+    e.preventDefault();
+
+    if (e.touches.length === 1 && dragging) {
+
+        x = e.touches[0].clientX - startX;
+        y = e.touches[0].clientY - startY;
+
+        updatePhoto();
+
+    }
+
+    if (e.touches.length === 2) {
+
+        const distance =
+            getDistance(e.touches[0], e.touches[1]);
+
+        scale =
+            startScale * distance / startDistance;
+
+        scale = Math.max(0.3, Math.min(scale, 5));
+
+        updatePhoto();
+
+    }
+
+}, { passive:false });
+
+
+preview.addEventListener("touchend", function() {
+
+    dragging = false;
+
+});
+
+
+function getDistance(touch1, touch2) {
+
+    const dx =
+        touch1.clientX - touch2.clientX;
+
+    const dy =
+        touch1.clientY - touch2.clientY;
+
+    return Math.sqrt(dx * dx + dy * dy);
+
+}
+
+
+// 拡大
+
+document.getElementById("zoomIn").addEventListener("click", function() {
+
+    scale *= 1.2;
+
+    updatePhoto();
+
+});
+
+
+// 縮小
+
+document.getElementById("zoomOut").addEventListener("click", function() {
+
+    scale *= 0.8;
+
+    updatePhoto();
+
+});
+
+
+// リセット
+
+document.getElementById("reset").addEventListener("click", function() {
+
+    scale = 1;
+    x = 0;
+    y = 0;
+
+    updatePhoto();
+
+});
+
+</script>
+
+</body>
+</html>
