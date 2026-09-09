@@ -1,1231 +1,632 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-
+<meta charset="UTF-8">
 <meta name="viewport"
-      content="width=device-width,
-               initial-scale=1,
-               viewport-fit=cover">
+      content="width=device-width, initial-scale=1.0,
+               maximum-scale=1.0, user-scalable=no">
 
-<title>クリタンメーカー Grande 470ml</title>
+<title>クリタンメーカー — Grande 470ml</title>
 
 <style>
-
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: #f3f3f3;
+  background: #f5f5f5;
   color: #222;
   font-family:
     -apple-system,
     BlinkMacSystemFont,
     "Helvetica Neue",
+    Arial,
     sans-serif;
 }
 
-.wrap {
+.container {
   max-width: 760px;
-  margin: auto;
-  padding: 18px;
+  margin: 0 auto;
+  padding: 24px 18px 50px;
 }
 
 h1 {
-  font-size: 23px;
-  margin: 0 0 5px;
+  font-size: 30px;
+  line-height: 1.25;
+  margin: 0 0 18px;
 }
 
-.note {
+.subtitle {
+  font-size: 20px;
   color: #666;
-  font-size: 14px;
   line-height: 1.5;
-  margin: 0 0 16px;
+  margin-bottom: 24px;
 }
 
-.photoButton {
+/* 写真選択 */
+.fileButton {
   display: block;
   width: 100%;
-  padding: 15px;
-  border-radius: 12px;
   background: #222;
   color: white;
   text-align: center;
-  font-size: 17px;
-  font-weight: 700;
+  padding: 20px 10px;
+  border-radius: 20px;
+  font-size: 24px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 30px;
 }
 
-input[type="file"] {
+#photoInput {
   display: none;
 }
 
-.previewBox {
-  margin-top: 16px;
-  padding: 12px;
+/* プレビュー外枠 */
+.previewOuter {
   background: #ddd;
-  border-radius: 14px;
+  padding: 24px;
+  border-radius: 24px;
 }
 
-canvas {
-  display: block;
+.preview {
+  position: relative;
   width: 100%;
-  height: auto;
+  aspect-ratio: 1.42 / 1;
   background: white;
-  border-radius: 8px;
+  overflow: hidden;
+  border-radius: 16px;
   touch-action: none;
 }
 
-.status {
-  margin-top: 12px;
-  padding: 12px;
+/*
+  Grande 470ml 台紙
+
+  上が広く、下が狭い扇形。
+*/
+.template {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 10%;
+  bottom: 10%;
+
+  clip-path: polygon(
+    4% 0%,
+    96% 0%,
+    88% 100%,
+    12% 100%
+  );
+
+  overflow: hidden;
+  border: 2px solid #444;
+}
+
+/*
+  写真Canvas
+*/
+#previewCanvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+
+  display: block;
+}
+
+/* 操作説明 */
+.info {
   background: white;
-  border-radius: 10px;
-  font-size: 14px;
-  line-height: 1.5;
+  border-radius: 18px;
+  padding: 20px;
+  margin-top: 24px;
+  font-size: 18px;
+  line-height: 1.6;
 }
 
 .controls {
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
+  gap: 12px;
+  margin-top: 20px;
 }
 
 .controls button {
   flex: 1;
-  border: 0;
-  border-radius: 10px;
-  padding: 12px 5px;
-  font-size: 15px;
+  border: none;
+  border-radius: 18px;
+  padding: 18px 8px;
+  font-size: 20px;
+  color: #1683ff;
+  background: #e9e9e9;
 }
 
 .pdfButton {
   width: 100%;
-  margin-top: 14px;
-  padding: 15px;
-  border: 0;
-  border-radius: 12px;
+  border: none;
+  border-radius: 20px;
+  padding: 22px 10px;
+  margin-top: 26px;
   background: #555;
   color: white;
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 23px;
+  font-weight: bold;
 }
 
-.pdfButton:disabled {
-  background: #aaa;
-}
-
-.help {
+.note {
   color: #777;
-  font-size: 12px;
-  line-height: 1.5;
-  margin-top: 9px;
+  font-size: 17px;
+  line-height: 1.6;
+  margin-top: 15px;
 }
 
+/* ============================
+   印刷専用
+   ============================ */
+
+#printArea {
+  display: none;
+}
+
+@media print {
+
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 210mm;
+    height: 297mm;
+    margin: 0;
+    padding: 0;
+    background: white;
+  }
+
+  body > * {
+    display: none !important;
+  }
+
+  #printArea {
+    display: block !important;
+    position: relative;
+
+    width: 210mm;
+    height: 297mm;
+
+    background: white;
+    overflow: hidden;
+  }
+
+  /*
+    Grande台紙の実寸領域
+
+    幅：約170mm
+    高さ：約120mm
+
+    A4中央に配置。
+  */
+  #printTemplate {
+    position: absolute;
+
+    width: 170mm;
+    height: 120mm;
+
+    left: 20mm;
+    top: 70mm;
+
+    overflow: hidden;
+
+    clip-path: polygon(
+      4% 0%,
+      96% 0%,
+      88% 100%,
+      12% 100%
+    );
+  }
+
+  #printCanvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+
+    width: 170mm;
+    height: 120mm;
+
+    display: block;
+  }
+
+  /*
+    実寸確認用100mmスケール
+  */
+  #scale100 {
+    position: absolute;
+
+    left: 20mm;
+    top: 200mm;
+
+    width: 100mm;
+    height: 8mm;
+
+    font-family: Arial, sans-serif;
+    font-size: 3mm;
+    color: black;
+  }
+
+  #scaleLine {
+    position: absolute;
+
+    left: 0;
+    bottom: 0;
+
+    width: 100mm;
+    height: 0;
+
+    border-top: 0.4mm solid black;
+  }
+
+  #scaleLeft,
+  #scaleRight {
+    position: absolute;
+
+    width: 0;
+    height: 3mm;
+
+    border-left: 0.4mm solid black;
+
+    bottom: -1.5mm;
+  }
+
+  #scaleLeft {
+    left: 0;
+  }
+
+  #scaleRight {
+    right: 0;
+  }
+
+  #printLabel {
+    position: absolute;
+
+    left: 20mm;
+    top: 211mm;
+
+    font-family: Arial, sans-serif;
+    font-size: 3mm;
+    color: black;
+  }
+}
 </style>
 </head>
 
-
 <body>
 
-<div class="wrap">
+<div class="container">
 
-<h1>
-クリタンメーカー — Grande 470ml
-</h1>
+  <h1>
+    クリタンメーカー — Grande 470ml
+  </h1>
 
-<p class="note">
-STEP 3：写真を調整して、実寸A4 PDFを作成
-</p>
+  <div class="subtitle">
+    Grande 470ml・湾曲台紙プレビュー
+  </div>
 
+  <label class="fileButton" for="photoInput">
+    📷 写真を選ぶ
+  </label>
 
-<label class="photoButton">
+  <input
+    id="photoInput"
+    type="file"
+    accept="image/*"
+  >
 
-📷 写真を選ぶ
+  <div class="previewOuter">
 
-<input
-  id="photo"
-  type="file"
-  accept="image/*">
+    <div class="preview" id="preview">
 
-</label>
+      <div class="template">
 
+        <canvas id="previewCanvas"></canvas>
 
-<div class="previewBox">
+      </div>
 
-<canvas
-  id="canvas"
-  width="1200"
-  height="900">
-</canvas>
+    </div>
 
-</div>
+  </div>
 
+  <div class="info">
+    ✓ 写真を読み込みました。<br>
+    Grande 470mlの台紙形状に沿って表示しています。
+  </div>
 
-<div
-  id="status"
-  class="status">
+  <div class="controls">
 
-写真を選択してください。
+    <button id="zoomOut">
+      − 縮小
+    </button>
 
-</div>
+    <button id="reset">
+      リセット
+    </button>
 
+    <button id="zoomIn">
+      ＋ 拡大
+    </button>
 
-<div class="controls">
+  </div>
 
-<button id="smaller">
-− 縮小
-</button>
+  <button class="pdfButton" id="makePDF">
+    📄 実寸A4 PDFを作成
+  </button>
 
-<button id="reset">
-リセット
-</button>
-
-<button id="larger">
-＋ 拡大
-</button>
-
-</div>
-
-
-<button
-  id="pdfButton"
-  class="pdfButton"
-  disabled>
-
-📄 実寸A4 PDFを作成
-
-</button>
-
-
-<div class="help">
-
-1本指：写真を指でつかんで移動<br>
-2本指：ピンチで拡大・縮小<br>
-PDFはA4用紙に実寸で配置します。<br>
-今回のPDFには実寸確認用の100mmスケールを入れています。
+  <div class="note">
+    1本指：写真をつかんで移動<br>
+    2本指：ピンチで拡大・縮小<br>
+    PDFはA4用紙に実寸で配置します。<br>
+    印刷時は「実際のサイズ」「100%」を選択してください。
+  </div>
 
 </div>
+
+
+<!-- ============================
+     印刷用A4
+     ============================ -->
+
+<div id="printArea">
+
+  <div id="printTemplate">
+    <canvas id="printCanvas"></canvas>
+  </div>
+
+  <div id="scale100">
+
+    <div id="scaleLine"></div>
+
+    <div id="scaleLeft"></div>
+    <div id="scaleRight"></div>
+
+    100 mm
+
+  </div>
+
+  <div id="printLabel">
+    Grande 470ml / 実寸テスト
+  </div>
 
 </div>
 
 
 <script>
 
+const input = document.getElementById("photoInput");
 
-/* =================================================
-   Grande 470ml 台紙データ
-   ================================================= */
+const previewCanvas =
+  document.getElementById("previewCanvas");
 
-const R_IN =
-  693.51882249879;
+const printCanvas =
+  document.getElementById("printCanvas");
 
-const R_OUT =
-  863.14001699879;
-
-const ANGLE =
-  16.336130 * Math.PI / 180;
-
-
-/* =================================================
-   Canvas
-   ================================================= */
-
-const canvas =
-  document.getElementById("canvas");
+const preview =
+  document.getElementById("preview");
 
 const ctx =
-  canvas.getContext("2d");
+  previewCanvas.getContext("2d");
 
-const photoInput =
-  document.getElementById("photo");
-
-const status =
-  document.getElementById("status");
-
-const pdfButton =
-  document.getElementById("pdfButton");
-
-
-/* =================================================
-   写真状態
-   ================================================= */
+const printCtx =
+  printCanvas.getContext("2d");
 
 let image = null;
 
-let zoom = 1;
 
-let moveX = 0;
+/* =================================
+   写真位置・拡大率
+   ================================= */
 
-let moveY = 0;
+let scale = 1;
 
-
-/* =================================================
-   タッチ状態
-   ================================================= */
-
-let dragging = false;
-
-let lastX = 0;
-
-let lastY = 0;
-
-let pinchDistance = 0;
-
-let pinchZoom = 1;
+let offsetX = 0;
+let offsetY = 0;
 
 
-/* =================================================
-   台紙ジオメトリ
-   ================================================= */
+/* =================================
+   Canvasサイズ
+   ================================= */
 
-function getGeometry() {
+function resizeCanvas() {
 
-  const centerAngle =
-    -Math.PI / 2;
+  const rect = preview.getBoundingClientRect();
 
-  const a1 =
-    centerAngle - ANGLE / 2;
+  const dpr =
+    window.devicePixelRatio || 1;
 
-  const a2 =
-    centerAngle + ANGLE / 2;
+  previewCanvas.width =
+    rect.width * dpr;
 
+  previewCanvas.height =
+    rect.height * dpr;
 
-  const points = [
+  previewCanvas.style.width =
+    rect.width + "px";
 
-    point(R_OUT, a1),
-    point(R_OUT, a2),
+  previewCanvas.style.height =
+    rect.height + "px";
 
-    point(R_IN, a1),
-    point(R_IN, a2)
-
-  ];
-
-
-  let minX = Infinity;
-  let maxX = -Infinity;
-
-  let minY = Infinity;
-  let maxY = -Infinity;
-
-
-  points.forEach(p => {
-
-    minX =
-      Math.min(minX, p.x);
-
-    maxX =
-      Math.max(maxX, p.x);
-
-    minY =
-      Math.min(minY, p.y);
-
-    maxY =
-      Math.max(maxY, p.y);
-
-  });
-
-
-  return {
-
-    centerAngle,
-    a1,
-    a2,
-
-    minX,
-    maxX,
-
-    minY,
-    maxY,
-
-    width:
-      maxX - minX,
-
-    height:
-      maxY - minY
-
-  };
-
-}
-
-
-function point(r, angle) {
-
-  return {
-
-    x:
-      r * Math.cos(angle),
-
-    y:
-      r * Math.sin(angle)
-
-  };
-
-}
-
-
-/* =================================================
-   写真Canvas作成
-   ================================================= */
-
-function createSourceCanvas() {
-
-  const sourceCanvas =
-    document.createElement("canvas");
-
-  sourceCanvas.width =
-    image.naturalWidth;
-
-  sourceCanvas.height =
-    image.naturalHeight;
-
-
-  const sourceCtx =
-    sourceCanvas.getContext("2d");
-
-
-  sourceCtx.drawImage(
-    image,
+  ctx.setTransform(
+    dpr,
+    0,
+    0,
+    dpr,
     0,
     0
   );
 
-
-  return sourceCanvas;
-
+  drawPreview();
 }
 
 
-/* =================================================
-   台紙画像を作る
-   ================================================= */
-
-function createTemplateCanvas(
-  outputWidth,
-  outputHeight
-) {
-
-  const outputCanvas =
-    document.createElement("canvas");
-
-  outputCanvas.width =
-    outputWidth;
-
-  outputCanvas.height =
-    outputHeight;
+window.addEventListener(
+  "resize",
+  resizeCanvas
+);
 
 
-  const outputCtx =
-    outputCanvas.getContext("2d");
+/* =================================
+   写真読み込み
+   ================================= */
 
+input.addEventListener(
+  "change",
+  function() {
 
-  outputCtx.fillStyle =
-    "white";
+    const file = this.files[0];
 
-  outputCtx.fillRect(
-    0,
-    0,
-    outputWidth,
-    outputHeight
-  );
+    if (!file) return;
 
+    const reader =
+      new FileReader();
 
-  if (!image) {
+    reader.onload = function(e) {
 
-    return outputCanvas;
+      const img =
+        new Image();
+
+      img.onload = function() {
+
+        image = img;
+
+        scale = 1;
+
+        offsetX = 0;
+        offsetY = 0;
+
+        resizeCanvas();
+
+      };
+
+      img.src = e.target.result;
+
+    };
+
+    reader.readAsDataURL(file);
 
   }
+);
 
 
-  const geo =
-    getGeometry();
+/* =================================
+   プレビュー描画
+   ================================= */
 
+function drawPreview() {
 
-  const margin = 45;
+  const rect =
+    preview.getBoundingClientRect();
 
-
-  const scale =
-    Math.min(
-
-      (outputWidth - margin * 2) /
-        geo.width,
-
-      (outputHeight - margin * 2) /
-        geo.height
-
-    );
-
-
-  const centerX =
-    outputWidth / 2;
-
-  const centerY =
-    outputHeight / 2;
-
-
-  const cx =
-    (geo.minX + geo.maxX) / 2;
-
-  const cy =
-    (geo.minY + geo.maxY) / 2;
-
-
-  const sourceCanvas =
-    createSourceCanvas();
-
-
-  const sourceCtx =
-    sourceCanvas.getContext("2d");
-
-
-  const source =
-    sourceCtx.getImageData(
-      0,
-      0,
-      sourceCanvas.width,
-      sourceCanvas.height
-    );
-
-
-  const sourcePixels =
-    source.data;
-
-
-  const output =
-    outputCtx.createImageData(
-      outputWidth,
-      outputHeight
-    );
-
-
-  const pixels =
-    output.data;
-
-
-  for (
-    let py = 0;
-    py < outputHeight;
-    py++
-  ) {
-
-    const worldY =
-      cy +
-      (py - centerY) / scale;
-
-
-    for (
-      let px = 0;
-      px < outputWidth;
-      px++
-    ) {
-
-      const worldX =
-        cx +
-        (px - centerX) / scale;
-
-
-      const radius =
-        Math.sqrt(
-          worldX * worldX +
-          worldY * worldY
-        );
-
-
-      if (
-        radius < R_IN ||
-        radius > R_OUT
-      ) {
-
-        continue;
-
-      }
-
-
-      const angle =
-        Math.atan2(
-          worldY,
-          worldX
-        );
-
-
-      const localAngle =
-        angle + Math.PI / 2;
-
-
-      if (
-        localAngle <
-          -ANGLE / 2 ||
-
-        localAngle >
-          ANGLE / 2
-      ) {
-
-        continue;
-
-      }
-
-
-      let u =
-        (
-          localAngle +
-          ANGLE / 2
-        ) / ANGLE;
-
-
-      let v =
-        (
-          R_OUT - radius
-        ) /
-        (
-          R_OUT - R_IN
-        );
-
-
-      /*
-       * 拡大縮小
-       */
-
-      u =
-        (
-          u - 0.5
-        ) / zoom
-        + 0.5;
-
-
-      v =
-        (
-          v - 0.5
-        ) / zoom
-        + 0.5;
-
-
-      /*
-       * 位置移動
-
-       * 指と写真が同じ方向に動く
-       */
-
-      u -= moveX;
-
-      v -= moveY;
-
-
-      if (
-        u < 0 ||
-        u > 1 ||
-        v < 0 ||
-        v > 1
-      ) {
-
-        continue;
-
-      }
-
-
-      const sx =
-        Math.min(
-          sourceCanvas.width - 1,
-
-          Math.max(
-            0,
-
-            Math.floor(
-              u *
-              sourceCanvas.width
-            )
-          )
-
-        );
-
-
-      const sy =
-        Math.min(
-          sourceCanvas.height - 1,
-
-          Math.max(
-            0,
-
-            Math.floor(
-              v *
-              sourceCanvas.height
-            )
-          )
-
-        );
-
-
-      const sourceIndex =
-        (
-          sy *
-          sourceCanvas.width +
-          sx
-        ) * 4;
-
-
-      const destIndex =
-        (
-          py *
-          outputWidth +
-          px
-        ) * 4;
-
-
-      pixels[destIndex] =
-        sourcePixels[sourceIndex];
-
-      pixels[destIndex + 1] =
-        sourcePixels[sourceIndex + 1];
-
-      pixels[destIndex + 2] =
-        sourcePixels[sourceIndex + 2];
-
-      pixels[destIndex + 3] =
-        255;
-
-    }
-
-  }
-
-
-  outputCtx.putImageData(
-    output,
-    0,
-    0
-  );
-
-
-  /*
-   * 輪郭線
-   */
-
-  drawOutlineToContext(
-    outputCtx,
-    geo,
-    scale,
-    centerX,
-    centerY,
-    cx,
-    cy
-  );
-
-
-  return outputCanvas;
-
-}
-
-
-/* =================================================
-   輪郭線
-   ================================================= */
-
-function drawOutlineToContext(
-  targetCtx,
-  geo,
-  scale,
-  centerX,
-  centerY,
-  cx,
-  cy
-) {
-
-  targetCtx.save();
-
-  targetCtx.beginPath();
-
-  targetCtx.lineWidth = 3;
-
-  targetCtx.strokeStyle = "#222";
-
-
-  /*
-   * 外側円弧
-   */
-
-  for (
-    let i = 0;
-    i <= 120;
-    i++
-  ) {
-
-    const angle =
-      geo.a1 +
-      ANGLE *
-      i /
-      120;
-
-
-    const p =
-      point(
-        R_OUT,
-        angle
-      );
-
-
-    const x =
-      centerX +
-      (p.x - cx) *
-      scale;
-
-
-    const y =
-      centerY +
-      (p.y - cy) *
-      scale;
-
-
-    if (i === 0) {
-
-      targetCtx.moveTo(
-        x,
-        y
-      );
-
-    } else {
-
-      targetCtx.lineTo(
-        x,
-        y
-      );
-
-    }
-
-  }
-
-
-  /*
-   * 右側
-   */
-
-  const right =
-    point(
-      R_IN,
-      geo.a2
-    );
-
-
-  targetCtx.lineTo(
-
-    centerX +
-    (right.x - cx) *
-    scale,
-
-    centerY +
-    (right.y - cy) *
-    scale
-
-  );
-
-
-  /*
-   * 内側円弧
-   */
-
-  for (
-    let i = 120;
-    i >= 0;
-    i--
-  ) {
-
-    const angle =
-      geo.a1 +
-      ANGLE *
-      i /
-      120;
-
-
-    const p =
-      point(
-        R_IN,
-        angle
-      );
-
-
-    const x =
-      centerX +
-      (p.x - cx) *
-      scale;
-
-
-    const y =
-      centerY +
-      (p.y - cy) *
-      scale;
-
-
-    targetCtx.lineTo(
-      x,
-      y
-    );
-
-  }
-
-
-  /*
-   * 左側
-   */
-
-  const left =
-    point(
-      R_OUT,
-      geo.a1
-    );
-
-
-  targetCtx.lineTo(
-
-    centerX +
-    (left.x - cx) *
-    scale,
-
-    centerY +
-    (left.y - cy) *
-    scale
-
-  );
-
-
-  targetCtx.closePath();
-
-  targetCtx.stroke();
-
-  targetCtx.restore();
-
-}
-
-
-/* =================================================
-   プレビュー
-   ================================================= */
-
-function render() {
-
-  const preview =
-    createTemplateCanvas(
-      canvas.width,
-      canvas.height
-    );
-
+  const w = rect.width;
+  const h = rect.height;
 
   ctx.clearRect(
     0,
     0,
-    canvas.width,
-    canvas.height
+    w,
+    h
   );
+
+  if (!image) return;
+
+
+  /*
+    写真を「cover」で初期配置
+  */
+
+  const imageRatio =
+    image.width / image.height;
+
+  const boxRatio =
+    w / h;
+
+  let baseWidth;
+  let baseHeight;
+
+  if (imageRatio > boxRatio) {
+
+    baseHeight = h;
+
+    baseWidth =
+      baseHeight * imageRatio;
+
+  } else {
+
+    baseWidth = w;
+
+    baseHeight =
+      baseWidth / imageRatio;
+  }
+
+
+  const drawWidth =
+    baseWidth * scale;
+
+  const drawHeight =
+    baseHeight * scale;
+
+
+  const x =
+    (w - baseWidth) / 2 +
+    offsetX;
+
+  const y =
+    (h - baseHeight) / 2 +
+    offsetY;
 
 
   ctx.drawImage(
-    preview,
-    0,
-    0
+    image,
+    x,
+    y,
+    drawWidth,
+    drawHeight
   );
-
 }
 
 
-/* =================================================
-   写真選択
-   ================================================= */
-
-photoInput.addEventListener(
-  "change",
-  function() {
-
-    const file =
-      photoInput.files[0];
-
-    if (!file) {
-      return;
-    }
-
-
-    const url =
-      URL.createObjectURL(
-        file
-      );
-
-
-    image =
-      new Image();
-
-
-    image.onload =
-      function() {
-
-        zoom = 1;
-
-        moveX = 0;
-
-        moveY = 0;
-
-
-        pdfButton.disabled =
-          false;
-
-
-        status.innerHTML =
-          "✓ 写真を読み込みました。<br>" +
-          "位置と大きさを調整できます。";
-
-
-        render();
-
-
-        URL.revokeObjectURL(
-          url
-        );
-
-      };
-
-
-    image.onerror =
-      function() {
-
-        status.textContent =
-          "写真を読み込めませんでした。";
-
-      };
-
-
-    image.src =
-      url;
-
-  }
-);
-
-
-/* =================================================
-   1本指移動
-   ================================================= */
-
-canvas.addEventListener(
-  "touchstart",
-  function(e) {
-
-    if (
-      e.touches.length === 1
-    ) {
-
-      dragging = true;
-
-      lastX =
-        e.touches[0].clientX;
-
-      lastY =
-        e.touches[0].clientY;
-
-    }
-
-
-    if (
-      e.touches.length === 2
-    ) {
-
-      dragging = false;
-
-      pinchDistance =
-        getDistance(
-          e.touches[0],
-          e.touches[1]
-        );
-
-      pinchZoom =
-        zoom;
-
-    }
-
-  },
-  {
-    passive: false
-  }
-);
-
-
-/* =================================================
-   タッチ移動
-   ================================================= */
-
-canvas.addEventListener(
-  "touchmove",
-  function(e) {
-
-    e.preventDefault();
-
-
-    if (
-      e.touches.length === 1 &&
-      dragging
-    ) {
-
-      const x =
-        e.touches[0].clientX;
-
-      const y =
-        e.touches[0].clientY;
-
-
-      const dx =
-        x - lastX;
-
-      const dy =
-        y - lastY;
-
-
-      lastX = x;
-
-      lastY = y;
-
-
-      moveX +=
-        dx /
-        canvas.clientWidth;
-
-
-      moveY +=
-        dy /
-        canvas.clientHeight;
-
-
-      render();
-
-    }
-
-
-    if (
-      e.touches.length === 2
-    ) {
-
-      const currentDistance =
-        getDistance(
-          e.touches[0],
-          e.touches[1]
-        );
-
-
-      zoom =
-        pinchZoom *
-        currentDistance /
-        pinchDistance;
-
-
-      zoom =
-        Math.max(
-          0.25,
-
-          Math.min(
-            5,
-
-            zoom
-          )
-        );
-
-
-      render();
-
-    }
-
-  },
-  {
-    passive: false
-  }
-);
-
-
-/* =================================================
-   タッチ終了
-   ================================================= */
-
-canvas.addEventListener(
-  "touchend",
-  function(e) {
-
-    if (
-      e.touches.length === 0
-    ) {
-
-      dragging = false;
-
-    }
-
-  }
-);
-
-
-/* =================================================
-   2点間距離
-   ================================================= */
-
-function getDistance(a, b) {
-
-  return Math.sqrt(
-
-    Math.pow(
-      a.clientX -
-      b.clientX,
-      2
-    )
-
-    +
-
-    Math.pow(
-      a.clientY -
-      b.clientY,
-      2
-    )
-
-  );
-
-}
-
-
-/* =================================================
-   拡大
-   ================================================= */
+/* =================================
+   ズーム
+   ================================= */
 
 document
-  .getElementById("larger")
+  .getElementById("zoomIn")
   .addEventListener(
     "click",
     function() {
 
-      zoom =
-        Math.min(
-          5,
-          zoom * 1.15
-        );
+      scale *= 1.15;
 
-      render();
-
+      drawPreview();
     }
   );
 
 
-/* =================================================
-   縮小
-   ================================================= */
-
 document
-  .getElementById("smaller")
+  .getElementById("zoomOut")
   .addEventListener(
     "click",
     function() {
 
-      zoom =
-        Math.max(
-          0.25,
-          zoom / 1.15
-        );
+      scale /= 1.15;
 
-      render();
-
+      drawPreview();
     }
   );
 
 
-/* =================================================
+/* =================================
    リセット
-   ================================================= */
+   ================================= */
 
 document
   .getElementById("reset")
@@ -1233,433 +634,274 @@ document
     "click",
     function() {
 
-      zoom = 1;
+      scale = 1;
 
-      moveX = 0;
+      offsetX = 0;
+      offsetY = 0;
 
-      moveY = 0;
-
-      render();
-
+      drawPreview();
     }
   );
 
 
-/* =================================================
-   PDF作成
-   ================================================= */
+/* =================================
+   1本指ドラッグ
+   ================================= */
 
-pdfButton.addEventListener(
-  "click",
-  function() {
+let dragging = false;
 
-    if (!image) {
+let lastX = 0;
+let lastY = 0;
 
-      alert(
-        "先に写真を選択してください。"
+
+preview.addEventListener(
+  "pointerdown",
+  function(e) {
+
+    if (e.pointerType === "mouse" ||
+        e.pointerType === "touch") {
+
+      dragging = true;
+
+      lastX = e.clientX;
+      lastY = e.clientY;
+
+      preview.setPointerCapture(
+        e.pointerId
       );
-
-      return;
-
     }
+  }
+);
 
 
-    status.innerHTML =
-      "PDFを作成しています……";
+preview.addEventListener(
+  "pointermove",
+  function(e) {
 
+    if (!dragging) return;
 
-    /*
-     * A4を300dpi相当で作成
+    const dx =
+      e.clientX - lastX;
 
-     * 210mm × 297mm
-     *
-     * 1 inch = 25.4mm
-     *
-     * 300dpi
-     */
-
-    const DPI = 300;
-
-    const MM_PER_INCH = 25.4;
-
-    const A4_WIDTH_MM = 210;
-
-    const A4_HEIGHT_MM = 297;
-
-
-    const pdfWidth =
-      Math.round(
-        A4_WIDTH_MM /
-        MM_PER_INCH *
-        DPI
-      );
-
-
-    const pdfHeight =
-      Math.round(
-        A4_HEIGHT_MM /
-        MM_PER_INCH *
-        DPI
-      );
-
+    const dy =
+      e.clientY - lastY;
 
     /*
-     * A4キャンバス
-     */
+      指を右へ動かしたら
+      写真も右へ動く。
 
-    const pdfCanvas =
-      document.createElement("canvas");
+      指を左へ動かしたら
+      写真も左へ動く。
+    */
 
-    pdfCanvas.width =
-      pdfWidth;
+    offsetX += dx;
+    offsetY += dy;
 
-    pdfCanvas.height =
-      pdfHeight;
+    lastX = e.clientX;
+    lastY = e.clientY;
 
-
-    const pdfCtx =
-      pdfCanvas.getContext("2d");
-
-
-    pdfCtx.fillStyle =
-      "white";
-
-    pdfCtx.fillRect(
-      0,
-      0,
-      pdfWidth,
-      pdfHeight
-    );
+    drawPreview();
+  }
+);
 
 
-    /*
-     * 現在のプレビューを
-     * A4中央に配置
-     */
+preview.addEventListener(
+  "pointerup",
+  function(e) {
 
-    const template =
-      createTemplateCanvas(
-        1800,
-        1350
+    dragging = false;
+
+    try {
+      preview.releasePointerCapture(
+        e.pointerId
       );
-
-
-    /*
-     * 台紙をA4上に配置
-
-     * A4幅いっぱいにはせず、
-     * 実寸基準で配置する。
-
-     * ここでは現在の台紙比率を
-     * 実寸スケールへ変換。
-     */
-
-    const geo =
-      getGeometry();
-
-
-    const scaleX =
-      1800 /
-      (
-        geo.maxX -
-        geo.minX
-      );
-
-
-    const mmWidth =
-      (
-        geo.maxX -
-        geo.minX
-      ) /
-      10;
-
-
-    const targetWidth =
-      Math.round(
-        mmWidth /
-        MM_PER_INCH *
-        DPI *
-        scaleX
-      );
-
-
-    /*
-     * 台紙の実寸配置サイズ
-
-     * Grande台紙の幅を
-     * ジオメトリから計算。
-     */
-
-    const actualWidthMM =
-      (
-        geo.maxX -
-        geo.minX
-      ) / 10;
-
-
-    const actualHeightMM =
-      (
-        geo.maxY -
-        geo.minY
-      ) / 10;
-
-
-    const targetW =
-      Math.round(
-        actualWidthMM /
-        MM_PER_INCH *
-        DPI
-      );
-
-
-    const targetH =
-      Math.round(
-        actualHeightMM /
-        MM_PER_INCH *
-        DPI
-      );
-
-
-    const left =
-      Math.round(
-        (
-          pdfWidth -
-          targetW
-        ) / 2
-      );
-
-
-    const top =
-      Math.round(
-        (
-          pdfHeight -
-          targetH
-        ) / 2
-      );
-
-
-    /*
-     * 台紙を描画
-     */
-
-    pdfCtx.drawImage(
-
-      template,
-
-      left,
-      top,
-
-      targetW,
-      targetH
-
-    );
-
-
-    /*
-     * 100mm確認線
-
-     * A4下部に配置
-     */
-
-    const scale100 =
-      Math.round(
-        100 /
-        MM_PER_INCH *
-        DPI
-      );
-
-
-    const rulerY =
-      pdfHeight - 120;
-
-
-    pdfCtx.strokeStyle =
-      "#000";
-
-    pdfCtx.lineWidth =
-      3;
-
-
-    pdfCtx.beginPath();
-
-    pdfCtx.moveTo(
-      100,
-      rulerY
-    );
-
-    pdfCtx.lineTo(
-      100 + scale100,
-      rulerY
-    );
-
-    pdfCtx.stroke();
-
-
-    pdfCtx.beginPath();
-
-    pdfCtx.moveTo(
-      100,
-      rulerY - 12
-    );
-
-    pdfCtx.lineTo(
-      100,
-      rulerY + 12
-    );
-
-    pdfCtx.moveTo(
-      100 + scale100,
-      rulerY - 12
-    );
-
-    pdfCtx.lineTo(
-      100 + scale100,
-      rulerY + 12
-    );
-
-    pdfCtx.stroke();
-
-
-    pdfCtx.fillStyle =
-      "#000";
-
-    pdfCtx.font =
-      "24px sans-serif";
-
-    pdfCtx.fillText(
-      "100 mm",
-      100,
-      rulerY - 20
-    );
-
-
-    pdfCtx.font =
-      "20px sans-serif";
-
-    pdfCtx.fillText(
-      "Grande 470ml / 実寸テスト",
-      100,
-      pdfHeight - 55
-    );
-
-
-    /*
-     * PNGとして保存用データ作成
-     */
-
-    const dataUrl =
-      pdfCanvas.toDataURL(
-        "image/png"
-      );
-
-
-    /*
-     * ブラウザ標準機能で
-     * PDF保存できるようにする。
-
-     * PNGを新しい画面で表示し、
-     * iPhoneの共有メニューから
-     * 「プリント」または
-     * 「ファイルに保存」を使う。
-     */
-
-    const newWindow =
-      window.open();
-
-
-    if (!newWindow) {
-
-      status.innerHTML =
-        "新しい画面を開けませんでした。<br>" +
-        "Safariのポップアップ設定を確認してください。";
-
-      return;
-
-    }
-
-
-    newWindow.document.write(`
-
-      <!doctype html>
-
-      <html lang="ja">
-
-      <head>
-
-      <meta charset="utf-8">
-
-      <meta
-        name="viewport"
-        content="width=device-width,
-                 initial-scale=1">
-
-      <title>
-      Grande 470ml 実寸テスト
-      </title>
-
-      <style>
-
-      body {
-        margin: 0;
-        padding: 20px;
-        background: #eee;
-        text-align: center;
-        font-family:
-          -apple-system,
-          BlinkMacSystemFont,
-          sans-serif;
-      }
-
-      img {
-        max-width: 100%;
-        height: auto;
-        background: white;
-      }
-
-      p {
-        font-size: 14px;
-        line-height: 1.5;
-      }
-
-      </style>
-
-      </head>
-
-      <body>
-
-      <p>
-      この画面を共有 → プリント<br>
-      または「ファイルに保存」してください。<br>
-      印刷時は「実際のサイズ / 100%」を選択してください。
-      </p>
-
-      <img
-        src="${dataUrl}"
-      >
-
-      </body>
-
-      </html>
-
-    `);
-
-
-    newWindow.document.close();
-
-
-    status.innerHTML =
-      "✓ 実寸A4テストデータを作成しました。<br>" +
-      "共有 → プリント、またはファイルに保存してください。";
+    } catch(err) {}
 
   }
 );
 
 
-/* =================================================
-   初期表示
-   ================================================= */
+/* =================================
+   PDF用Canvas生成
+   ================================= */
 
-render();
+function createPrintCanvas() {
+
+  /*
+    170mm × 120mm
+
+    300dpi相当の高解像度で生成。
+  */
+
+  const DPI = 300;
+
+  const MM_TO_PX =
+    DPI / 25.4;
+
+  const width =
+    Math.round(170 * MM_TO_PX);
+
+  const height =
+    Math.round(120 * MM_TO_PX);
+
+  printCanvas.width =
+    width;
+
+  printCanvas.height =
+    height;
+
+  printCtx.clearRect(
+    0,
+    0,
+    width,
+    height
+  );
+
+  if (!image) return;
+
+
+  /*
+    プレビューと同じ写真位置を
+    170mm × 120mmへ変換する
+  */
+
+  const previewRect =
+    preview.getBoundingClientRect();
+
+  const pw =
+    previewRect.width;
+
+  const ph =
+    previewRect.height;
+
+
+  const imageRatio =
+    image.width / image.height;
+
+  const boxRatio =
+    pw / ph;
+
+
+  let baseWidth;
+  let baseHeight;
+
+  if (imageRatio > boxRatio) {
+
+    baseHeight = ph;
+
+    baseWidth =
+      baseHeight * imageRatio;
+
+  } else {
+
+    baseWidth = pw;
+
+    baseHeight =
+      baseWidth / imageRatio;
+  }
+
+
+  const drawWidth =
+    baseWidth * scale;
+
+  const drawHeight =
+    baseHeight * scale;
+
+
+  const x =
+    (pw - baseWidth) / 2 +
+    offsetX;
+
+  const y =
+    (ph - baseHeight) / 2 +
+    offsetY;
+
+
+  /*
+    プレビュー座標
+    ↓
+    実寸170×120mm座標
+  */
+
+  const sx =
+    width / pw;
+
+  const sy =
+    height / ph;
+
+
+  printCtx.drawImage(
+    image,
+
+    x * sx,
+    y * sy,
+
+    drawWidth * sx,
+    drawHeight * sy
+  );
+}
+
+
+/* =================================
+   PDF / 印刷
+   ================================= */
+
+document
+  .getElementById("makePDF")
+  .addEventListener(
+    "click",
+    function() {
+
+      if (!image) {
+
+        alert(
+          "先に写真を選択してください。"
+        );
+
+        return;
+      }
+
+
+      /*
+        印刷用画像を作成
+      */
+
+      createPrintCanvas();
+
+
+      /*
+        Safariに描画完了を待たせる
+      */
+
+      setTimeout(
+        function() {
+
+          /*
+            iPhone Safariの印刷画面を開く。
+
+            ここから
+            共有 → ファイルに保存
+            または
+            プリンタ選択
+
+            ができます。
+          */
+
+          window.print();
+
+        },
+        300
+      );
+
+    }
+  );
+
+
+/* =================================
+   初期化
+   ================================= */
+
+resizeCanvas();
 
 </script>
 
