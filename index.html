@@ -110,6 +110,7 @@ canvas {
 </style>
 </head>
 
+
 <body>
 
 <div class="wrap">
@@ -119,8 +120,9 @@ canvas {
 </h1>
 
 <p class="note">
-STEP 2.2：Grande 470ml・正しい上下方向の湾曲プレビュー
+STEP 2.3：Grande 470ml・直感的な写真位置調整
 </p>
+
 
 <label class="photoButton">
 
@@ -134,6 +136,7 @@ STEP 2.2：Grande 470ml・正しい上下方向の湾曲プレビュー
 
 </label>
 
+
 <div class="previewBox">
 
 <canvas
@@ -144,6 +147,7 @@ STEP 2.2：Grande 470ml・正しい上下方向の湾曲プレビュー
 
 </div>
 
+
 <div
   id="status"
   class="status">
@@ -151,6 +155,7 @@ STEP 2.2：Grande 470ml・正しい上下方向の湾曲プレビュー
 写真を選択してください。
 
 </div>
+
 
 <div class="controls">
 
@@ -168,10 +173,11 @@ STEP 2.2：Grande 470ml・正しい上下方向の湾曲プレビュー
 
 </div>
 
+
 <div class="help">
 
-1本指：写真を上下左右に移動<br>
-2本指：写真を拡大・縮小
+1本指：写真を指でつかんで移動<br>
+2本指：ピンチで拡大・縮小
 
 </div>
 
@@ -180,13 +186,16 @@ STEP 2.2：Grande 470ml・正しい上下方向の湾曲プレビュー
 
 <script>
 
+
 /* =================================================
    Grande 470ml 実寸データ
    ================================================= */
 
-const R_IN = 693.51882249879;
+const R_IN =
+  693.51882249879;
 
-const R_OUT = 863.14001699879;
+const R_OUT =
+  863.14001699879;
 
 const ANGLE =
   16.336130 * Math.PI / 180;
@@ -239,31 +248,6 @@ let pinchZoom = 1;
 
 /* =================================================
    台紙ジオメトリ
-   =================================================
-
-   重要：
-
-   画面上では
-
-       上 = R_OUT
-       下 = R_IN
-
-   とする。
-
-   つまり、
-
-       上：広い
-       下：狭い
-
-   になる。
-
-   画面のY座標は
-
-       0 = 上
-       H = 下
-
-   なので、今回は数学座標の
-   上下反転を行わない。
    ================================================= */
 
 function getGeometry() {
@@ -298,11 +282,17 @@ function getGeometry() {
 
   points.forEach(p => {
 
-    minX = Math.min(minX, p.x);
-    maxX = Math.max(maxX, p.x);
+    minX =
+      Math.min(minX, p.x);
 
-    minY = Math.min(minY, p.y);
-    maxY = Math.max(maxY, p.y);
+    maxX =
+      Math.max(maxX, p.x);
+
+    minY =
+      Math.min(minY, p.y);
+
+    maxY =
+      Math.max(maxY, p.y);
 
   });
 
@@ -421,7 +411,7 @@ function render() {
 
 
   /*
-   * 元画像
+   * 元画像をCanvasへ読み込む
    */
 
   const sourceCanvas =
@@ -459,7 +449,7 @@ function render() {
 
 
   /*
-   * 出力
+   * 出力画像
    */
 
   const output =
@@ -474,7 +464,7 @@ function render() {
 
 
   /* =================================================
-     各画面ピクセルを台紙座標へ変換
+     台紙への湾曲変換
      ================================================= */
 
   for (
@@ -485,15 +475,12 @@ function render() {
 
 
     /*
-     * ここが前回との最大の違い。
+     * Canvas座標を台紙座標へ
 
-     * Canvasの画面座標をそのまま
-     * 「上→下」として扱う。
+     * 上 = R_OUT
+     * 下 = R_IN
 
-     * 上がR_OUT
-     * 下がR_IN
-     *
-     * なので上下反転しない。
+     * 上下反転はしない
      */
 
     const worldY =
@@ -514,7 +501,7 @@ function render() {
 
 
       /*
-       * 半径
+       * 中心からの距離
        */
 
       const radius =
@@ -522,6 +509,20 @@ function render() {
           worldX * worldX +
           worldY * worldY
         );
+
+
+      /*
+       * 台紙の半径範囲外
+       */
+
+      if (
+        radius < R_IN ||
+        radius > R_OUT
+      ) {
+
+        continue;
+
+      }
 
 
       /*
@@ -536,26 +537,19 @@ function render() {
 
 
       /*
-       * 台紙外
+       * 上方向を中心とした角度
+
+       * 左 = マイナス
+       * 右 = プラス
        */
 
-      if (
-        radius < R_IN ||
-        radius > R_OUT
-      ) {
-
-        continue;
-
-      }
+      const localAngle =
+        angle + Math.PI / 2;
 
 
       /*
-       * 中心角を基準にする
+       * 台紙の左右範囲外
        */
-
-      let localAngle =
-        angle + Math.PI / 2;
-
 
       if (
         localAngle <
@@ -571,8 +565,8 @@ function render() {
 
 
       /*
-       * 左 → 右
-       *
+       * 写真の横方向
+
        * 左 = 0
        * 右 = 1
        */
@@ -585,11 +579,8 @@ function render() {
 
 
       /*
-       * 上 → 下
-       *
-       * 外側 = 上
-       * 内側 = 下
-       *
+       * 写真の縦方向
+
        * 上 = 0
        * 下 = 1
        */
@@ -603,9 +594,9 @@ function render() {
         );
 
 
-      /*
-       * 拡大・縮小
-       */
+      /* =================================================
+         拡大・縮小
+         ================================================= */
 
       u =
         (
@@ -621,17 +612,27 @@ function render() {
         + 0.5;
 
 
+      /* =================================================
+         写真の位置移動
+
+         ★今回の修正ポイント★
+
+         指を右へ動かす
+               ↓
+         写真も右へ動く
+
+         指を左へ動かす
+               ↓
+         写真も左へ動く
+         ================================================= */
+
+      u -= moveX;
+
+      v -= moveY;
+
+
       /*
-       * 移動
-       */
-
-      u += moveX;
-
-      v += moveY;
-
-
-      /*
-       * 写真範囲外
+       * 写真の範囲外
        */
 
       if (
@@ -647,7 +648,7 @@ function render() {
 
 
       /*
-       * 元画像座標
+       * 元写真のピクセル位置
        */
 
       const sx =
@@ -662,6 +663,7 @@ function render() {
               sourceCanvas.width
             )
           )
+
         );
 
 
@@ -677,6 +679,7 @@ function render() {
               sourceCanvas.height
             )
           )
+
         );
 
 
@@ -713,6 +716,10 @@ function render() {
   }
 
 
+  /*
+   * 画像を表示
+   */
+
   ctx.putImageData(
     output,
     0,
@@ -721,7 +728,7 @@ function render() {
 
 
   /*
-   * 台紙輪郭
+   * 台紙の輪郭線
    */
 
   drawOutline(
@@ -737,7 +744,7 @@ function render() {
 
 
 /* =================================================
-   台紙輪郭
+   台紙輪郭線
    ================================================= */
 
 function drawOutline(
@@ -759,9 +766,7 @@ function drawOutline(
 
 
   /*
-   * 上側
-   *
-   * R_OUT
+   * 上側の外側円弧
    */
 
   for (
@@ -840,9 +845,7 @@ function drawOutline(
 
 
   /*
-   * 下側
-   *
-   * R_IN
+   * 下側の内側円弧
    */
 
   for (
@@ -986,7 +989,7 @@ photoInput.addEventListener(
 
 
 /* =================================================
-   1本指移動
+   1本指：写真をつかんで移動
    ================================================= */
 
 canvas.addEventListener(
@@ -1007,6 +1010,10 @@ canvas.addEventListener(
 
     }
 
+
+    /*
+     * 2本指操作開始
+     */
 
     if (
       e.touches.length === 2
@@ -1043,6 +1050,10 @@ canvas.addEventListener(
     e.preventDefault();
 
 
+    /*
+     * 1本指
+     */
+
     if (
       e.touches.length === 1 &&
       dragging
@@ -1067,6 +1078,14 @@ canvas.addEventListener(
       lastY = y;
 
 
+      /*
+       * 指の移動量を写真位置へ反映
+
+       * moveX / moveY の符号は
+       * render()側で反転しているため、
+       * ここでは自然な方向で加算する。
+       */
+
       moveX +=
         dx /
         canvas.clientWidth;
@@ -1082,11 +1101,15 @@ canvas.addEventListener(
     }
 
 
+    /*
+     * 2本指：ピンチ
+     */
+
     if (
       e.touches.length === 2
     ) {
 
-      const current =
+      const currentDistance =
         getDistance(
           e.touches[0],
           e.touches[1]
@@ -1095,9 +1118,15 @@ canvas.addEventListener(
 
       zoom =
         pinchZoom *
-        current /
+        currentDistance /
         pinchDistance;
 
+
+      /*
+       * ズーム範囲
+
+       * 0.25倍 ～ 5倍
+       */
 
       zoom =
         Math.max(
@@ -1105,6 +1134,7 @@ canvas.addEventListener(
 
           Math.min(
             5,
+
             zoom
           )
         );
@@ -1127,9 +1157,15 @@ canvas.addEventListener(
 
 canvas.addEventListener(
   "touchend",
-  function() {
+  function(e) {
 
-    dragging = false;
+    if (
+      e.touches.length === 0
+    ) {
+
+      dragging = false;
+
+    }
 
   }
 );
@@ -1163,7 +1199,7 @@ function getDistance(a, b) {
 
 
 /* =================================================
-   拡大
+   ＋ 拡大
    ================================================= */
 
 document
@@ -1185,7 +1221,7 @@ document
 
 
 /* =================================================
-   縮小
+   − 縮小
    ================================================= */
 
 document
@@ -1229,7 +1265,7 @@ document
 
 
 /* =================================================
-   初期表示
+   初期描画
    ================================================= */
 
 render();
